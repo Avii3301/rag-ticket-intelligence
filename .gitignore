@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+data/raw/
+*.csv
+*.parquet
+mlruns/
+.DS_Store
