@@ -14,10 +14,10 @@ AI assistant that ingests historical IT support tickets, classifies them by seve
 ```
 rag-ticket-intelligence/
 ├── data/
-│   ├── raw/          # downloaded Kaggle CSV (gitignored)
-│   └── processed/    # cleaned data
-├── notebooks/
-│   └── week1_eda.ipynb
+│   ├── raw/          # synthetic ITSM dataset (gitignored)
+│   ├── processed/    # cleaned data
+│   └── chroma_db/    # vector store (gitignored)
+├── notebooks/        # weekly demo notebooks
 ├── src/              # core modules (embeddings, retriever, pipeline)
 ├── models/           # saved classifiers
 ├── api/              # Flask app
@@ -33,14 +33,4 @@ pip install -r requirements.txt
 ```
 
 ## Dataset
-Download from [Kaggle ITSM Dataset](https://www.kaggle.com/datasets/imrandude/itsm) and place CSV in `data/raw/`.
-
-## Progress
-- [x] Week 1 — Setup & Data Exploration
-- [ ] Week 2 — Embeddings & Vector DB
-- [ ] Week 3 — RAG Pipeline
-- [ ] Week 4 — Classification Layer
-- [ ] Week 5 — API + UI
-- [ ] Week 6 — Evaluation & Depth
-- [ ] Week 7 — Polish & Deploy
-- [ ] Week 8 — Interview Prep
+10,000 synthetic ITSM tickets generated via `scripts/generate_dataset.py`. Also available on Kaggle.
