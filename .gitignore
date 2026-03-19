@@ -7,3 +7,4 @@ data/raw/
 *.parquet
 mlruns/
 .DS_Store
+data/chroma_db/
