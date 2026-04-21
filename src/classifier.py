@@ -148,6 +148,27 @@ def train_tfidf_lr(
         }
 
 
+def fit_tfidf_lr(
+    X_train: list[str],
+    y_train: list[str],
+    max_features: int = 10_000,
+    C: float = 1.0,
+):
+    """
+    Train TF-IDF + LR without MLflow — used by the Flask API on startup.
+    Returns (vectoriser, clf) ready for inference.
+    """
+    vectoriser = TfidfVectorizer(
+        max_features=max_features,
+        ngram_range=(1, 2),
+        sublinear_tf=True,
+    )
+    X_vec = vectoriser.fit_transform(X_train)
+    clf = LogisticRegression(C=C, max_iter=1000, solver="lbfgs")
+    clf.fit(X_vec, y_train)
+    return vectoriser, clf
+
+
 # ── DistilBERT fine-tune ───────────────────────────────────────────────────────
 
 class _TicketDataset(Dataset):
