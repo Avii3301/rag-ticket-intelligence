@@ -109,6 +109,7 @@ def search(
             "ticket_id": meta["ticket_id"],
             "subject": meta["subject"],
             "category": meta["category"],
+            "sub_category": meta.get("sub_category", ""),
             "priority": meta["priority"],
             "resolution": meta["resolution"],
             "distance": results["distances"][0][i],

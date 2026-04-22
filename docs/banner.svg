@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0c29"/>
+      <stop offset="50%" style="stop-color:#302b63"/>
+      <stop offset="100%" style="stop-color:#24243e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="320" fill="url(#bg)"/>
+
+  <!-- Accent bar -->
+  <rect x="0" y="0" width="6" height="320" fill="url(#accent)"/>
+
+  <!-- Grid dots -->
+  <g opacity="0.07" fill="#ffffff">
+    <circle cx="80" cy="60" r="2"/><circle cx="160" cy="60" r="2"/><circle cx="240" cy="60" r="2"/>
+    <circle cx="80" cy="130" r="2"/><circle cx="160" cy="130" r="2"/><circle cx="240" cy="130" r="2"/>
+    <circle cx="80" cy="200" r="2"/><circle cx="160" cy="200" r="2"/><circle cx="240" cy="200" r="2"/>
+    <circle cx="80" cy="270" r="2"/><circle cx="160" cy="270" r="2"/><circle cx="240" cy="270" r="2"/>
+    <circle cx="1100" cy="60" r="2"/><circle cx="1180" cy="60" r="2"/>
+    <circle cx="1100" cy="130" r="2"/><circle cx="1180" cy="130" r="2"/>
+    <circle cx="1100" cy="200" r="2"/><circle cx="1180" cy="200" r="2"/>
+    <circle cx="1100" cy="270" r="2"/><circle cx="1180" cy="270" r="2"/>
+  </g>
+
+  <!-- Pipeline diagram (right side) -->
+  <g transform="translate(880, 60)" opacity="0.85">
+    <!-- Box 1 -->
+    <rect x="0" y="0" width="160" height="44" rx="6" fill="none" stroke="#667eea" stroke-width="1.5"/>
+    <text x="80" y="27" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">Ticket Description</text>
+    <!-- Arrow -->
+    <line x1="80" y1="44" x2="80" y2="64" stroke="#667eea" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <!-- Box 2 -->
+    <rect x="0" y="64" width="160" height="44" rx="6" fill="none" stroke="#667eea" stroke-width="1.5"/>
+    <text x="80" y="91" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">BGE Embed + ChromaDB</text>
+    <!-- Arrow -->
+    <line x1="80" y1="108" x2="80" y2="128" stroke="#667eea" stroke-width="1.5"/>
+    <!-- Box 3 -->
+    <rect x="0" y="128" width="160" height="44" rx="6" fill="none" stroke="#764ba2" stroke-width="1.5"/>
+    <text x="80" y="155" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">Cross-Encoder Rerank</text>
+    <!-- Arrow -->
+    <line x1="80" y1="172" x2="80" y2="192" stroke="#764ba2" stroke-width="1.5"/>
+    <!-- Box 4 -->
+    <rect x="0" y="192" width="160" height="44" rx="6" fill="#764ba2" fill-opacity="0.3" stroke="#764ba2" stroke-width="1.5"/>
+    <text x="80" y="219" font-family="monospace" font-size="13" fill="#e2d9f3" text-anchor="middle">Mistral 7B → Answer</text>
+  </g>
+
+  <!-- Main title -->
+  <text x="60" y="120" font-family="'Segoe UI', Arial, sans-serif" font-size="52" font-weight="700" fill="#ffffff" letter-spacing="-1">RAG Ticket Intelligence</text>
+
+  <!-- Subtitle -->
+  <text x="62" y="162" font-family="'Segoe UI', Arial, sans-serif" font-size="20" fill="#a78bfa">End-to-end AI system for IT support ticket classification &amp; resolution</text>
+
+  <!-- Tag pills -->
+  <rect x="62" y="196" width="110" height="28" rx="14" fill="#667eea" fill-opacity="0.25" stroke="#667eea" stroke-width="1"/>
+  <text x="117" y="215" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">ChromaDB</text>
+
+  <rect x="184" y="196" width="86" height="28" rx="14" fill="#667eea" fill-opacity="0.25" stroke="#667eea" stroke-width="1"/>
+  <text x="227" y="215" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">LangChain</text>
+
+  <rect x="282" y="196" width="96" height="28" rx="14" fill="#667eea" fill-opacity="0.25" stroke="#667eea" stroke-width="1"/>
+  <text x="330" y="215" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">Mistral 7B</text>
+
+  <rect x="390" y="196" width="100" height="28" rx="14" fill="#667eea" fill-opacity="0.25" stroke="#667eea" stroke-width="1"/>
+  <text x="440" y="215" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">DistilBERT</text>
+
+  <rect x="502" y="196" width="66" height="28" rx="14" fill="#667eea" fill-opacity="0.25" stroke="#667eea" stroke-width="1"/>
+  <text x="535" y="215" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">RAGAS</text>
+
+  <!-- Bottom stats -->
+  <text x="62" y="272" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#6b7280">10,000 tickets</text>
+  <text x="62" y="295" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#6b7280">8 categories · 88% F1 · Faithfulness 1.0</text>
+</svg>
