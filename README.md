@@ -21,7 +21,7 @@
 
 ## What It Does
 
-Paste a ticket description → the system returns:
+Paste a ticket description and the system returns:
 
 - **Category** — Hardware / Software / Network / Security / etc.
 - **Priority** — Critical / High / Medium / Low with confidence scores
@@ -30,47 +30,39 @@ Paste a ticket description → the system returns:
 
 ---
 
-## Demo
-
-![Streamlit UI](docs/demo.png)
-
-> Start the API, run Streamlit, paste any IT ticket description.
-
----
-
 ## Architecture
 
 ```
 New ticket description
          │
-         ├──────────────────────────────────────────────────────┐
-         ▼                                                       ▼
-┌─────────────────────┐                          ┌──────────────────────────┐
-│   TF-IDF + LR       │                          │  BGE-small-en-v1.5       │
-│   Classifier        │                          │  Embed query             │
-│                     │                          └──────────┬───────────────┘
-│  category: Network  │                                     ▼
-│  priority: High     │                          ┌──────────────────────────┐
-│  confidence: 94%    │                          │  ChromaDB vector search  │
-└─────────────────────┘                          │  top-60 candidates       │
-                                                 └──────────┬───────────────┘
-                                                            ▼
-                                                 ┌──────────────────────────┐
-                                                 │  Deduplication           │
-                                                 │  (unique resolutions)    │
-                                                 └──────────┬───────────────┘
-                                                            ▼
-                                                 ┌──────────────────────────┐
-                                                 │  Cross-encoder reranker  │
-                                                 │  ms-marco-MiniLM-L-6-v2  │
-                                                 │  top-5 results           │
-                                                 └──────────┬───────────────┘
-                                                            ▼
-                                                 ┌──────────────────────────┐
-                                                 │  Mistral 7B via Ollama   │
-                                                 │  root cause +            │
-                                                 │  resolution suggestion   │
-                                                 └──────────────────────────┘
+         ├─────────────────────────────────────────────────────┐
+         ▼                                                      ▼
+┌────────────────────┐                        ┌───────────────────────────┐
+│  TF-IDF + LR       │                        │  BGE-small-en-v1.5        │
+│  Classifier        │                        │  Embed query              │
+│                    │                        └────────────┬──────────────┘
+│  category: Network │                                     ▼
+│  priority: High    │                        ┌───────────────────────────┐
+│  confidence: 94%   │                        │  ChromaDB vector search   │
+└────────────────────┘                        │  top-60 candidates        │
+                                              └────────────┬──────────────┘
+                                                           ▼
+                                              ┌───────────────────────────┐
+                                              │  Deduplication            │
+                                              │  (unique resolutions)     │
+                                              └────────────┬──────────────┘
+                                                           ▼
+                                              ┌───────────────────────────┐
+                                              │  Cross-encoder reranker   │
+                                              │  ms-marco-MiniLM-L-6-v2   │
+                                              │  top-5 results            │
+                                              └────────────┬──────────────┘
+                                                           ▼
+                                              ┌───────────────────────────┐
+                                              │  Mistral 7B via Ollama    │
+                                              │  root cause +             │
+                                              │  resolution suggestion    │
+                                              └───────────────────────────┘
 ```
 
 ---
@@ -81,13 +73,13 @@ New ticket description
 |---|---|
 | Dataset | 10,000 synthetic ITSM tickets — `scripts/generate_dataset.py` |
 | Embeddings | `sentence-transformers` — `BAAI/bge-small-en-v1.5` (MPS accelerated) |
-| Vector DB | ChromaDB 0.6.3 (local persistent) |
+| Vector DB | ChromaDB (local persistent) |
 | Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
 | RAG Framework | LangChain |
 | LLM | Mistral 7B via Ollama (local, no API key needed) |
 | Classifier | TF-IDF + Logistic Regression · DistilBERT fine-tuned |
 | ML Tracking | MLflow |
-| API | Flask (port 5001) |
+| API | Flask |
 | UI | Streamlit |
 | Evaluation | RAGAS · MRR · NDCG |
 
@@ -105,24 +97,23 @@ New ticket description
 | Hit@1 | **100%** |
 | Hit@5 | **100%** |
 
-> ⚠️ **Note:** Eval queries are sampled from the same pool as the indexed tickets, so the retriever finds the exact source ticket as the top result. These scores reflect recall consistency, not generalisation to unseen queries. A held-out test set would give a more meaningful benchmark.
+> **Note:** Eval queries are drawn from the same pool as the indexed tickets, so the retriever finds the source ticket as the top result. These scores confirm embedding consistency. A held-out test set would give a more meaningful generalisation benchmark.
 
 ### Generation — 10 samples, judge: Mistral via Ollama
 
 | Metric | Score |
 |---|---|
-| Faithfulness (RAGAS) | n/a — Mistral output parsing failed |
 | Answer Relevancy (RAGAS) | **0.51** |
 
-### Classification — test set (1,996 tickets)
+### Classification — 1,996 ticket test set
 
 | Model | Target | Weighted F1 |
 |---|---|---|
-| TF-IDF + LR | Category | ~1.00 ⚠️ data leakage |
+| TF-IDF + LR | Category | ~1.00 ⚠️ keyword leakage |
 | TF-IDF + LR | Priority | **0.88** |
-| DistilBERT | Priority | **0.87** |
+| DistilBERT fine-tuned | Priority | **0.87** |
 
-> Category accuracy is artificially high — the synthetic generator embeds category-specific keywords directly into descriptions. Priority is the meaningful benchmark.
+> Category accuracy is inflated — the synthetic generator embeds category keywords directly into descriptions. Priority is the meaningful benchmark.
 
 ---
 
@@ -131,26 +122,27 @@ New ticket description
 ```
 rag-ticket-intelligence/
 ├── data/
-│   ├── raw/                      # generated dataset (gitignored)
-│   ├── processed/                # tickets_clean.csv
-│   └── chroma_db/                # ChromaDB vector store (gitignored)
+│   ├── raw/                    # generated dataset (gitignored)
+│   ├── processed/              # tickets_clean.csv
+│   └── chroma_db/              # ChromaDB vector store (gitignored)
 ├── docs/
 │   └── banner.svg
 ├── notebooks/
-│   ├── week1_eda.ipynb           # exploratory data analysis
-│   ├── week3_rag_pipeline.ipynb  # RAG chain walkthrough
-│   ├── week4_classification.ipynb
-│   └── week6_evaluation.ipynb    # MRR, NDCG, RAGAS
+│   ├── 01_eda.ipynb            # exploratory data analysis
+│   ├── 02_embeddings.ipynb     # BGE embeddings + ChromaDB
+│   ├── 03_rag_pipeline.ipynb   # full RAG chain walkthrough
+│   ├── 04_classification.ipynb # TF-IDF baseline + DistilBERT
+│   └── 05_evaluation.ipynb     # MRR, NDCG, RAGAS
 ├── scripts/
-│   └── generate_dataset.py       # synthetic data generator
+│   └── generate_dataset.py     # synthetic data generator
 ├── src/
-│   ├── embeddings.py             # BGE embeddings + ChromaDB ingestion
-│   ├── retriever.py              # vector search with deduplication
-│   ├── reranker.py               # cross-encoder reranking
-│   ├── rag_chain.py              # end-to-end RAG pipeline
-│   ├── classifier.py             # TF-IDF + LR and DistilBERT
-│   └── api.py                    # Flask REST API
-├── streamlit_app.py              # Streamlit UI
+│   ├── embeddings.py           # BGE embeddings + ChromaDB ingestion
+│   ├── retriever.py            # vector search with deduplication
+│   ├── reranker.py             # cross-encoder reranking
+│   ├── rag_chain.py            # end-to-end RAG pipeline
+│   ├── classifier.py           # TF-IDF + LR and DistilBERT classifiers
+│   └── api.py                  # Flask REST API
+├── streamlit_app.py            # Streamlit UI
 └── requirements.txt
 ```
 
@@ -174,31 +166,35 @@ git clone https://github.com/Avii3301/rag-ticket-intelligence
 cd rag-ticket-intelligence
 
 python3 -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ### Build the knowledge base
 
 ```bash
-# 1 — generate 10,000 synthetic tickets
+# Generate 10,000 synthetic ITSM tickets
 python scripts/generate_dataset.py
 
-# 2 — embed and index into ChromaDB
+# Embed and index into ChromaDB
 python src/embeddings.py
 ```
 
 ### Run
 
-```bash
-# Terminal 1 — API
-python src/api.py
+Open two terminals:
 
-# Terminal 2 — UI
+```bash
+# Terminal 1 — start the API
+python src/api.py
+```
+
+```bash
+# Terminal 2 — start the UI
 streamlit run streamlit_app.py
 ```
 
-Open **http://localhost:8501**
+Then open **http://localhost:8501** in your browser.
 
 ---
 
@@ -208,9 +204,9 @@ Open **http://localhost:8501**
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/health` | Liveness check |
-| POST | `/classify` | Predict category + priority |
-| POST | `/resolve` | RAG resolution suggestion |
+| `GET` | `/health` | Liveness check |
+| `POST` | `/classify` | Predict category + priority |
+| `POST` | `/resolve` | RAG resolution suggestion |
 
 ### POST /classify
 
@@ -226,8 +222,8 @@ curl -X POST http://localhost:5001/classify \
   "priority": "High",
   "category_confidence": 0.94,
   "priority_confidence": 0.81,
-  "category_scores": {"Network": 0.94, "Software": 0.03, ...},
-  "priority_scores": {"High": 0.81, "Critical": 0.10, ...}
+  "category_scores": {"Network": 0.94, "Software": 0.03},
+  "priority_scores": {"High": 0.81, "Critical": 0.10, "Medium": 0.07, "Low": 0.02}
 }
 ```
 
@@ -258,11 +254,9 @@ curl -X POST http://localhost:5001/resolve \
 
 ## Dataset
 
-10,000 synthetic ITSM tickets across 8 categories and 40+ sub-categories.
+10,000 synthetic ITSM tickets across 8 categories and 40+ sub-categories. Priority is learnable — each description contains urgency phrases correlated with its priority level:
 
-Priority is learnable — each ticket's description contains urgency phrases correlated with priority level:
-
-| Priority | Example phrase |
+| Priority | Example phrase injected into description |
 |---|---|
 | Critical | *"Production is down. All users affected. Needs immediate escalation."* |
 | High | *"This is blocking my work completely — I can't proceed without this fixed."* |
@@ -270,20 +264,6 @@ Priority is learnable — each ticket's description contains urgency phrases cor
 | Low | *"No rush on this — just flagging it when you have time."* |
 
 **[Dataset on Kaggle →](https://kaggle.com)**
-
----
-
-## Weekly Build Log
-
-| Week | Focus | Deliverable |
-|---|---|---|
-| 1 | Data & EDA | 10k tickets generated, cleaned, explored |
-| 2 | Embeddings | BGE-small embeddings → ChromaDB |
-| 3 | RAG pipeline | Retrieve → rerank → generate with Mistral |
-| 4 | Classification | TF-IDF 88% F1 · DistilBERT fine-tuned with MLflow |
-| 5 | API & UI | Flask REST API + Streamlit front-end |
-| 6 | Evaluation | MRR, NDCG retrieval metrics + RAGAS |
-| 7 | Deployment | Hugging Face Spaces / AWS EC2 |
 
 ---
 
