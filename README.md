@@ -252,6 +252,59 @@ curl -X POST http://localhost:5001/resolve \
 
 ---
 
+## Running the Evaluation Harness
+
+`scripts/evaluate.py` runs 10 built-in IT support queries through the full pipeline (retrieve → rerank → generate) and logs latency metrics and response traces to MLflow.
+
+### Default run
+
+```bash
+python scripts/evaluate.py
+```
+
+Runs all 10 queries using Ollama/mistral with `top_k_retrieve=20`, `top_k_rerank=5`.
+
+### Common options
+
+```bash
+# Use OpenAI instead of Ollama
+python scripts/evaluate.py --provider openai --model gpt-4o-mini
+
+# Tune retrieval parameters
+python scripts/evaluate.py --top-k-retrieve 10 --top-k-rerank 3
+
+# Score each response manually (1–5) after generation
+python scripts/evaluate.py --score
+
+# Run against a custom query
+python scripts/evaluate.py --queries "My VPN keeps dropping"
+```
+
+### View results in MLflow
+
+Start the UI in a separate terminal (from the project root):
+
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5050
+```
+
+Then open the link printed at the end of the run — it takes you directly to the experiment.
+
+### What gets logged per run
+
+| Metric | Description |
+|---|---|
+| `retrieval_latency_ms` | Time to query ChromaDB |
+| `rerank_latency_ms` | Time for cross-encoder reranking |
+| `generation_latency_ms` | Time for LLM response |
+| `total_latency_ms` | End-to-end latency |
+| `num_candidates` / `num_sources` | Retrieve and rerank counts |
+| `manual_quality_score` | 1–5 score if `--score` flag is used |
+
+Response traces (query + sources + generated response) are saved as JSON artifacts under each MLflow run.
+
+---
+
 ## Dataset
 
 10,000 synthetic ITSM tickets across 8 categories and 40+ sub-categories. Priority is learnable — each description contains urgency phrases correlated with its priority level:

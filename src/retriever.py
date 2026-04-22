@@ -1,5 +1,8 @@
 import chromadb
 from src.embeddings import get_embedding_model, search
+from src.logger import get_logger
+
+log = get_logger(__name__)
 
 # Default paths — match what embeddings.py used when building the database
 CHROMA_PATH = "data/chroma_db"
@@ -15,19 +18,12 @@ def get_collection(
     chroma_path: str = CHROMA_PATH,
     collection_name: str = COLLECTION_NAME,
 ) -> chromadb.Collection:
-    """
-    Load and return the ChromaDB collection from disk.
-
-    PersistentClient reads the database that was written by embeddings.py.
-    Calling this a second time returns the cached collection — no disk I/O.
-    """
     global _collection
     if _collection is None:
-        # PersistentClient opens the on-disk database at chroma_path.
-        # This is read-only from retriever's perspective — we never call
-        # build_collection() here, only query().
+        log.info("Opening ChromaDB at %s (collection=%s)", chroma_path, collection_name)
         client = chromadb.PersistentClient(path=chroma_path)
         _collection = client.get_collection(collection_name)
+        log.info("Collection loaded — %d documents indexed", _collection.count())
     return _collection
 
 
@@ -55,6 +51,7 @@ def retrieve(
     Returns a list of dicts, each with:
         ticket_id, subject, category, priority, resolution, distance
     """
+    log.info("retrieve | top_k=%d | query=%.80r", top_k, query)
     model = get_embedding_model()
     collection = get_collection()
 
@@ -62,6 +59,7 @@ def retrieve(
     # If top_k=20 and we fetched exactly 20, deduplication might leave us
     # with far fewer than 20 diverse results.
     candidates = search(query, collection, model, top_k=top_k * 3, where=where)
+    log.info("Vector search returned %d raw candidates", len(candidates))
 
     # Deduplicate by resolution text — keep first occurrence (lowest distance)
     # of each unique resolution. dict.fromkeys() preserves insertion order.
@@ -75,4 +73,8 @@ def retrieve(
         if len(diverse) == top_k:
             break
 
+    log.info(
+        "Deduplication: %d candidates → %d diverse results (removed %d duplicates)",
+        len(candidates), len(diverse), len(candidates) - len(diverse),
+    )
     return diverse

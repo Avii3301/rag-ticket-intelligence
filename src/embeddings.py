@@ -2,10 +2,17 @@ import chromadb
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 
+from src.logger import get_logger
+
+log = get_logger(__name__)
+
 
 def load_corpus(path: str) -> pd.DataFrame:
+    log.info("Loading corpus from %s", path)
     df = pd.read_csv(path)
-    return df[df["status"].isin(["Closed", "Resolved"])]
+    resolved = df[df["status"].isin(["Closed", "Resolved"])]
+    log.info("Corpus loaded — %d resolved tickets (of %d total)", len(resolved), len(df))
+    return resolved
 
 
 _model = None
@@ -14,10 +21,9 @@ _model = None
 def get_embedding_model(model_name: str = "BAAI/bge-small-en-v1.5") -> SentenceTransformer:
     global _model
     if _model is None:
-        # device="mps" routes tensor operations to the M-series GPU via Apple's Metal framework.
-        # The M4's CPU and GPU share unified memory, so there's no data transfer overhead —
-        # matrix multiplications (the core of transformer inference) run significantly faster on GPU.
+        log.info("Loading embedding model: %s (device=mps)", model_name)
         _model = SentenceTransformer(model_name, device="mps")
+        log.info("Embedding model ready")
     return _model
 
 
@@ -85,6 +91,7 @@ def search(
     top_k: int = 5,
     where: dict = None,
 ) -> list[dict]:
+    log.info("Vector search | top_k=%d | query=%.80r", top_k, query)
     # BGE was trained with this prefix on query strings only — not on documents.
     # Skipping it gives noticeably worse retrieval quality.
     prefixed_query = "Represent this sentence for searching relevant passages: " + query
@@ -115,6 +122,7 @@ def search(
             "distance": results["distances"][0][i],
         })
 
+    log.info("Vector search returned %d hits", len(hits))
     return hits
 
 

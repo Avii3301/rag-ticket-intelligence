@@ -1,4 +1,7 @@
 from sentence_transformers import CrossEncoder
+from src.logger import get_logger
+
+log = get_logger(__name__)
 
 # The model we're using is trained on MS MARCO — a large dataset of
 # (query, passage, relevance_label) triples from Bing search logs.
@@ -12,16 +15,11 @@ _cross_encoder = None
 
 
 def get_cross_encoder(model_name: str = MODEL_NAME) -> CrossEncoder:
-    """
-    Load and return the CrossEncoder model.
-    Cached after first call — subsequent calls return the same object.
-    """
     global _cross_encoder
     if _cross_encoder is None:
-        # CrossEncoder automatically picks the best available device.
-        # Unlike SentenceTransformer, it doesn't need device="mps" set
-        # explicitly — the sentence_transformers library handles that.
+        log.info("Loading cross-encoder: %s", model_name)
         _cross_encoder = CrossEncoder(model_name)
+        log.info("Cross-encoder ready")
     return _cross_encoder
 
 
@@ -45,8 +43,10 @@ def rerank(
     with a "rerank_score" field added to each dict.
     """
     if not candidates:
+        log.warning("rerank called with empty candidates list — returning []")
         return []
 
+    log.info("rerank | %d candidates → top_%d | query=%.80r", len(candidates), top_k, query)
     model = get_cross_encoder()
 
     # The cross-encoder expects a list of [query, document] pairs.
@@ -64,12 +64,23 @@ def rerank(
     # matter, only the relative ordering.
     scores = model.predict(pairs)
 
-    # Attach each score back to its candidate dict.
-    # zip() pairs up the scores list with the candidates list in order.
     for candidate, score in zip(candidates, scores):
         candidate["rerank_score"] = float(score)
 
-    # Sort by rerank_score descending (highest relevance first),
-    # then return only the top_k results.
     reranked = sorted(candidates, key=lambda c: c["rerank_score"], reverse=True)
-    return reranked[:top_k]
+    top = reranked[:top_k]
+
+    if top:
+        log.info(
+            "Rerank complete | top score=%.3f  bottom score=%.3f  spread=%.3f",
+            top[0]["rerank_score"],
+            top[-1]["rerank_score"],
+            top[0]["rerank_score"] - top[-1]["rerank_score"],
+        )
+        for rank, src in enumerate(top, 1):
+            log.info(
+                "  #%d  score=% .3f  category=%-12s  subject=%.60s",
+                rank, src["rerank_score"], src["category"], src["subject"],
+            )
+
+    return top
